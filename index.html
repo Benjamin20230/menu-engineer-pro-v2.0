@@ -17,13 +17,30 @@
   </style>
 </head>
 <body>
-  <div id="root">Cargando…</div>
+ <script>
+  (function () {
+    const root = document.getElementById('root');
 
-  <!-- ✅ DESPUÉS de cargar las librerías, recién aquí usamos preactHooks -->
-  <script>
+    // ✅ Comprobaciones defensivas para evitar pantalla en blanco
+    if (!window.preact) {
+      root.innerText = 'No se cargó Preact desde la CDN.';
+      return;
+    }
+    if (!window.htm) {
+      root.innerText = 'No se cargó HTM desde la CDN.';
+      return;
+    }
+
     const { h, render } = preact;
     const html = htm.bind(h);
-    const { useState, useMemo, useEffect } = preactHooks;
+
+    // Algunos builds exponen hooks como window.preactHooks, otros como preact.hooks:
+    const hooks = window.preactHooks || (preact && preact.hooks);
+    if (!hooks) {
+      root.innerText = 'No se cargaron los hooks de Preact.';
+      return;
+    }
+    const { useState, useMemo, useEffect } = hooks;
 
     // -------- Utils --------
     const LS_KEY = "menu_engineer_pro_v1_nobabel";
@@ -198,7 +215,7 @@
                     <td class="py-1 pr-2">${currency(margin)}</td>
                     <td class="py-1 pr-2">${currency(contrib)}</td>
                     <td class="py-1 pr-2"><span class=${`px-2 py-0.5 rounded text-xs ${badgeClass(cls)}`}>${labelFor(cls)}</span></td>
-                    <td class="py-1 w-24"><button onClick=${()=>setDb(s=>({...s, items: s.items.filter(x=>x.id!==i.id)}))} class="text-rose-600 hover:underline">Eliminar</button></td>
+                    <td class="py-1 w-24"><button onClick=${()=>removeItem(i.id)} class="text-rose-600 hover:underline">Eliminar</button></td>
                   </tr>`;
                 })}
               </tbody>
@@ -287,12 +304,6 @@
     }
 
     // -------- Montaje --------
-    try {
-      render(html`<${App} />`, document.getElementById('root'));
-    } catch (e) {
-      document.getElementById('root').innerText = "Ocurrió un error al cargar la app.";
-      console.error(e);
-    }
-  </script>
-</body>
-</html>
+    render(html`<${App} />`, root);
+  })();
+</script>
