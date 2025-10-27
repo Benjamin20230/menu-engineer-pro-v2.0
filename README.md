@@ -1,14 +1,12 @@
-# Menu Engineer Pro — MVP (Clean Build)
+# Menu Engineer Pro — Sin Babel (Preact + HTM)
 
-App gratuita para Menu Engineering: clasifica ítems en **Estrella / Caballo / Puzzle / Perro**, calcula **margen** y **popularidad**, y muestra una **matriz visual** con umbrales de **promedio/mediana**. Guarda datos localmente (localStorage).
+Versión sin Babel/JSX para GitHub Pages: evita pantallas en blanco causadas por CDNs o compilación en el navegador.
 
-## Publicar en GitHub Pages
-1. Sube **`index.html`** a la raíz de un repo público (por ejemplo, `menu-engineer-pro`).
-2. Ve a **Settings → Pages** y selecciona **Branch: `main`**, **Folder: `/ (root)`** → **Save**.
-3. Abre la URL que te da GitHub Pages. Si no ves cambios, refresca con **Ctrl+F5**.
+## Publicación
+1. Crea un repo público (p. ej., `menu-engineer-pro`).
+2. Sube **este `index.html`** a la raíz.
+3. Activa **Settings → Pages → Branch: `main`, Folder: `/ (root)`**.
 
-## CSV de ejemplo
-Encabezados esperados: `name,price,cost,sold`
-
-## Soporte
-Hecho con ❤️ por Digital Drinks Consulting.
+## Notas
+- Usa **Preact + HTM** (100% compatible con navegador, sin build).
+- Importa/Exporta CSV; datos en localStorage.
