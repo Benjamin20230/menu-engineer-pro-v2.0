@@ -2,20 +2,30 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Menu Engineer Pro — Sin Babel</title>
-  <meta name="description" content="App gratuita para Menu Engineering (sin Babel): clasifica ítems y calcula márgenes/popularidad.">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/dist/preact.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/hooks.umd.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
-  <style>body{background:#f8fafc}</style>
+  <meta name="description" content="App gratuita para Menu Engineering: clasifica ítems y calcula márgenes y popularidad.">
+
+  <!-- ✅ ORDEN CORRECTO DE LIBRERÍAS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/dist/preact.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/hooks.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
+
+  <style>
+    body{background:#f8fafc}
+  </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root">Cargando…</div>
+
+  <!-- ✅ DESPUÉS de cargar las librerías, recién aquí usamos preactHooks -->
   <script>
     const { h, render } = preact;
     const html = htm.bind(h);
+    const { useState, useMemo, useEffect } = preactHooks;
+
+    // -------- Utils --------
     const LS_KEY = "menu_engineer_pro_v1_nobabel";
     function uid(){ try { return crypto.randomUUID(); } catch { return Math.random().toString(36).slice(2); } }
     function currency(n){ if(n==null||isNaN(n)) return "-"; try { return new Intl.NumberFormat(undefined,{style:"currency",currency:"USD"}).format(n);} catch { return "$"+Number(n).toFixed(2);} }
@@ -49,18 +59,16 @@
     function labelFor(cls){ return cls==="star"?"Estrella":cls==="plow"?"Caballo":cls==="puzzle"?"Puzzle":"Perro"; }
     function badgeClass(cls){ switch(cls){ case "star": return "bg-emerald-100 text-emerald-700 border border-emerald-200"; case "plow": return "bg-amber-100 text-amber-700 border border-amber-200"; case "puzzle": return "bg-sky-100 text-sky-700 border border-sky-200"; case "dog": return "bg-rose-100 text-rose-700 border border-rose-200"; default: return "bg-slate-100 text-slate-700 border"; } }
 
-    const { useState, useMemo, useEffect } = preactHooks;
-  </script>
-  <script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/hooks.umd.js"></script>
-  <script>
+    // -------- State persistente --------
     function usePersistentState(defaultState){
-      const [state, setState] = preactHooks.useState(()=>{
+      const [state, setState] = useState(()=>{
         try{ const raw=localStorage.getItem(LS_KEY); return raw?JSON.parse(raw):defaultState; }catch{ return defaultState; }
       });
-      preactHooks.useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch{} }, [state]);
+      useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch{} }, [state]);
       return [state, setState];
     }
 
+    // -------- App --------
     function App(){
       const [db, setDb] = usePersistentState({
         items: [
@@ -73,7 +81,7 @@
         activeTab: "table",
       });
 
-      const metrics = preactHooks.useMemo(()=>computeMetrics(db.items, db.thresholds), [db.items, db.thresholds]);
+      const metrics = useMemo(()=>computeMetrics(db.items, db.thresholds), [db.items, db.thresholds]);
 
       function handleCSVImport(file){
         const reader = new FileReader();
@@ -117,7 +125,8 @@
               <div class="flex items-center gap-2">
                 <label class="px-3 py-1.5 text-sm rounded-xl bg-slate-100 hover:bg-slate-200 cursor-pointer">
                   Importar CSV
-                  <input type="file" accept=".csv,text/csv" class="hidden" onChange=${e=>e.target.files&&e.target.files[0]&&handleCSVImport(e.target.files[0])} />
+                  <input type="file" accept=".csv,text/csv" class="hidden"
+                         onChange=${e=>e.target.files&&e.target.files[0]&&handleCSVImport(e.target.files[0])} />
                 </label>
                 <button onClick=${handleCSVExport} class="px-3 py-1.5 text-sm rounded-xl bg-slate-100 border">Exportar CSV</button>
               </div>
@@ -125,7 +134,8 @@
             <nav class="max-w-6xl mx-auto px-2 pb-2 overflow-x-auto">
               <div class="flex gap-2">
                 ${["table","matrix","insights","help"].map(t => html`
-                  <button class=${`px-3 py-2 rounded-xl text-sm whitespace-nowrap border ${db.activeTab===t?"bg-slate-900 text-white border-slate-900":"bg-white hover:bg-slate-100 border-slate-200"}`} onClick=${()=>setDb(s=>({...s, activeTab: t}))}>
+                  <button class=${`px-3 py-2 rounded-xl text-sm whitespace-nowrap border ${db.activeTab===t?"bg-slate-900 text-white border-slate-900":"bg-white hover:bg-slate-100 border-slate-200"}`}
+                          onClick=${()=>setDb(s=>({...s, activeTab: t}))}>
                     ${t==="table"?"Tabla":t==="matrix"?"Matriz":t==="insights"?"Insights":"Ayuda"}
                   </button>
                 `)}
@@ -188,7 +198,7 @@
                     <td class="py-1 pr-2">${currency(margin)}</td>
                     <td class="py-1 pr-2">${currency(contrib)}</td>
                     <td class="py-1 pr-2"><span class=${`px-2 py-0.5 rounded text-xs ${badgeClass(cls)}`}>${labelFor(cls)}</span></td>
-                    <td class="py-1 w-24"><button onClick=${()=>removeItem(i.id)} class="text-rose-600 hover:underline">Eliminar</button></td>
+                    <td class="py-1 w-24"><button onClick=${()=>setDb(s=>({...s, items: s.items.filter(x=>x.id!==i.id)}))} class="text-rose-600 hover:underline">Eliminar</button></td>
                   </tr>`;
                 })}
               </tbody>
@@ -276,7 +286,13 @@
       return html`<div class="flex items-center gap-2"><span class=${`px-2 py-0.5 rounded text-xs ${badgeClass(badge)}`}>${labelFor(badge)}</span><span class="text-slate-500">${text}</span></div>`;
     }
 
-    render(html`<${App} />`, document.getElementById('root'));
+    // -------- Montaje --------
+    try {
+      render(html`<${App} />`, document.getElementById('root'));
+    } catch (e) {
+      document.getElementById('root').innerText = "Ocurrió un error al cargar la app.";
+      console.error(e);
+    }
   </script>
 </body>
 </html>
