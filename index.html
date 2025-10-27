@@ -3,91 +3,178 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Menu Engineer Pro — Sin Babel</title>
-  <meta name="description" content="App gratuita para Menu Engineering: clasifica ítems y calcula márgenes y popularidad.">
-
-  <!-- ✅ ORDEN CORRECTO DE LIBRERÍAS -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/dist/preact.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/preact@10.19.6/hooks.umd.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js"></script>
-
+  <title>Menu Engineer Pro — Vanilla</title>
+  <meta name="description" content="App gratuita para Menu Engineering: clasifica ítems y calcula márgenes y popularidad (sin dependencias externas).">
   <style>
-    body{background:#f8fafc}
+    :root{
+      --bg:#f8fafc; --card:#ffffff; --muted:#6b7280; --line:#e5e7eb; --text:#0f172a; --primary:#0f172a;
+      --emerald-bg:#ecfdf5; --emerald:#065f46;
+      --amber-bg:#fffbeb; --amber:#92400e;
+      --sky-bg:#eff6ff; --sky:#1e40af;
+      --rose-bg:#fff1f2; --rose:#9f1239;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background:var(--bg); color:var(--text);}
+    header{position:sticky; top:0; z-index:10; background:rgba(255,255,255,.85); backdrop-filter: blur(6px); border-bottom:1px solid var(--line);}
+    .container{max-width:1000px; margin:0 auto; padding:16px;}
+    .row{display:flex; align-items:center; justify-content:space-between; gap:12px;}
+    .brand{display:flex; align-items:center; gap:12px}
+    .logo{width:36px; height:36px; border-radius:14px; background:var(--primary); color:#fff; display:grid; place-items:center; font-weight:700}
+    .btn{background:#111827; color:#fff; border:none; padding:8px 12px; border-radius:10px; cursor:pointer}
+    .btn.secondary{background:#fff; color:#111827; border:1px solid var(--line)}
+    .chip{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; border:1px solid var(--line)}
+    main .card{background:var(--card); border:1px solid var(--line); border-radius:16px; padding:16px; margin:16px 0;}
+    table{border-collapse:collapse; width:100%;}
+    th,td{padding:6px; text-align:left; border-top:1px solid var(--line);}
+    input[type="number"], input[type="text"], select{
+      width:100%; padding:6px 8px; border:1px solid var(--line); border-radius:8px; background:#f1f5f9
+    }
+    .grid{display:grid; gap:12px}
+    .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+    @media (max-width:720px){ .row{flex-wrap:wrap} .grid-2{grid-template-columns:1fr} }
+    /* badges */
+    .b-star{background:var(--emerald-bg); color:var(--emerald); border:1px solid #a7f3d0}
+    .b-plow{background:var(--amber-bg); color:var(--amber); border:1px solid #fed7aa}
+    .b-puzzle{background:var(--sky-bg); color:var(--sky); border:1px solid #bfdbfe}
+    .b-dog{background:var(--rose-bg); color:var(--rose); border:1px solid #fecdd3}
+    /* matrix */
+    .matrix{position:relative; height:420px; border:1px solid var(--line); border-radius:14px; background:#f1f5f9; overflow:hidden}
+    .matrix .line-h{position:absolute; left:0; right:0; border-top:1px dashed #cbd5e1}
+    .matrix .line-v{position:absolute; top:0; bottom:0; border-left:1px dashed #cbd5e1}
+    .tag{position:absolute; font-size:12px; padding:4px 8px; border-radius:10px; border:1px solid var(--line); background:#fff}
+    footer{color:var(--muted); font-size:12px; padding-bottom:40px}
   </style>
 </head>
 <body>
- <script>
-  (function () {
-    const root = document.getElementById('root');
+  <header>
+    <div class="container">
+      <div class="row">
+        <div class="brand">
+          <div class="logo">ME</div>
+          <div>
+            <div style="font-weight:600">Menu Engineer Pro</div>
+            <div style="font-size:12px; color:var(--muted); margin-top:-2px">Clasifica ítems y optimiza rentabilidad</div>
+          </div>
+        </div>
+        <div class="row" style="gap:8px">
+          <label class="btn secondary">
+            Importar CSV
+            <input id="fileCSV" type="file" accept=".csv,text/csv" style="display:none">
+          </label>
+          <button id="btnCSV" class="btn secondary">Exportar CSV</button>
+          <button id="btnJSON" class="btn">Exportar JSON</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:12px; overflow:auto">
+        <div style="display:flex; gap:8px">
+          <button data-tab="table" class="btn secondary tab">Tabla</button>
+          <button data-tab="matrix" class="btn secondary tab">Matriz</button>
+          <button data-tab="insights" class="btn secondary tab">Insights</button>
+          <button data-tab="help" class="btn secondary tab">Ayuda</button>
+        </div>
+      </div>
+    </div>
+  </header>
 
-    // ✅ Comprobaciones defensivas para evitar pantalla en blanco
-    if (!window.preact) {
-      root.innerText = 'No se cargó Preact desde la CDN.';
-      return;
-    }
-    if (!window.htm) {
-      root.innerText = 'No se cargó HTM desde la CDN.';
-      return;
-    }
+  <main class="container">
+    <section id="view-table" class="card" hidden>
+      <div class="row">
+        <div>
+          <div style="font-weight:600">Tabla de ítems</div>
+          <div style="font-size:13px; color:var(--muted)">Edita Precio, Costo y Ventas. El sistema calcula Margen/Contribución/Clasificación.</div>
+        </div>
+        <button id="addItem" class="btn">Añadir ítem</button>
+      </div>
 
-    const { h, render } = preact;
-    const html = htm.bind(h);
+      <div class="row" style="gap:12px; margin:12px 0; flex-wrap:wrap">
+        <div class="row" style="gap:8px">
+          <span style="color:var(--muted); font-size:14px">Umbral popularidad:</span>
+          <select id="thr-pop">
+            <option value="avg">Promedio</option>
+            <option value="median">Mediana</option>
+          </select>
+        </div>
+        <div class="row" style="gap:8px">
+          <span style="color:var(--muted); font-size:14px">Umbral margen:</span>
+          <select id="thr-mar">
+            <option value="avg">Promedio</option>
+            <option value="median">Mediana</option>
+          </select>
+        </div>
+        <div id="thr-info" style="color:var(--muted); font-size:14px"></div>
+      </div>
 
-    // Algunos builds exponen hooks como window.preactHooks, otros como preact.hooks:
-    const hooks = window.preactHooks || (preact && preact.hooks);
-    if (!hooks) {
-      root.innerText = 'No se cargaron los hooks de Preact.';
-      return;
-    }
-    const { useState, useMemo, useEffect } = hooks;
+      <div style="overflow:auto">
+        <table id="tbl">
+          <thead>
+            <tr style="color:var(--muted)">
+              <th>Ítem</th><th>Precio</th><th>Costo</th><th>Ventas</th><th>Margen</th><th>Contribución</th><th>Clasificación</th><th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
 
-    // -------- Utils --------
-    const LS_KEY = "menu_engineer_pro_v1_nobabel";
-    function uid(){ try { return crypto.randomUUID(); } catch { return Math.random().toString(36).slice(2); } }
-    function currency(n){ if(n==null||isNaN(n)) return "-"; try { return new Intl.NumberFormat(undefined,{style:"currency",currency:"USD"}).format(n);} catch { return "$"+Number(n).toFixed(2);} }
-    function median(arr){ const a=[...arr].sort((x,y)=>x-y); const m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; }
-    function downloadText(filename, text){ const blob=new Blob([text],{type:"text/plain;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url), 500); }
-    function escapeCSV(s){ const v=String(s).replace(/"/g,'""'); return /[",\n]/.test(v)?`"${v}"`:v; }
-    function splitCSVLine(line){ const out=[]; let cur=""; let inQ=false; for(let i=0;i<line.length;i++){ const ch=line[i]; if(ch=='"'){ if(inQ && line[i+1]=='"'){cur+='"';i++;} else {inQ=!inQ;} } else if(ch==',' && !inQ){ out.push(cur); cur=""; } else { cur+=ch; } } out.push(cur); return out.map(s=>s.trim()); }
-    function parseCSV(text){ const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) return []; const headers=lines[0].split(",").map(h=>h.trim()); return lines.slice(1).map(line=>{ const cols=splitCSVLine(line); const obj={}; headers.forEach((h,i)=>obj[h]=cols[i]); return obj; }); }
+    <section id="view-matrix" class="card" hidden>
+      <div style="font-weight:600; margin-bottom:8px">Matriz de Menu Engineering</div>
+      <div class="matrix" id="matrix"></div>
+      <div class="grid grid-2" style="margin-top:12px; font-size:13px; color:var(--muted)">
+        <div><span class="chip b-star">Estrella</span> (↑ popularidad, ↑ margen)</div>
+        <div><span class="chip b-plow">Caballo</span> (↑ popularidad, ↓ margen)</div>
+        <div><span class="chip b-puzzle">Puzzle</span> (↓ popularidad, ↑ margen)</div>
+        <div><span class="chip b-dog">Perro</span> (↓ popularidad, ↓ margen)</div>
+      </div>
+    </section>
 
-    function computeMetrics(items, thresholds){
-      const sales = items.map(i=>Number(i.sold)||0);
-      const margins = items.map(i=>(Number(i.price)||0)-(Number(i.cost)||0));
-      const popularityAvg = sales.reduce((a,b)=>a+b,0)/(sales.length||1);
-      const popularityMedian = median(sales);
-      const marginAvg = margins.reduce((a,b)=>a+b,0)/(margins.length||1);
-      const marginMedian = median(margins);
-      const popularityThreshold = thresholds.popularity==="median" ? popularityMedian : popularityAvg;
-      const marginThreshold = thresholds.margin==="median" ? marginMedian : marginAvg;
-      return { popularityAvg, popularityMedian, marginAvg, marginMedian, popularityThreshold, marginThreshold };
-    }
-    function classify(item, metrics){
-      const sold = Number(item.sold)||0;
-      const margin = (Number(item.price)||0)-(Number(item.cost)||0);
-      const popHigh = sold>=metrics.popularityThreshold;
-      const marHigh = margin>=metrics.marginThreshold;
-      if(popHigh&&marHigh) return "star";
-      if(popHigh&&!marHigh) return "plow";
-      if(!popHigh&&marHigh) return "puzzle";
-      return "dog";
-    }
-    function labelFor(cls){ return cls==="star"?"Estrella":cls==="plow"?"Caballo":cls==="puzzle"?"Puzzle":"Perro"; }
-    function badgeClass(cls){ switch(cls){ case "star": return "bg-emerald-100 text-emerald-700 border border-emerald-200"; case "plow": return "bg-amber-100 text-amber-700 border border-amber-200"; case "puzzle": return "bg-sky-100 text-sky-700 border border-sky-200"; case "dog": return "bg-rose-100 text-rose-700 border border-rose-200"; default: return "bg-slate-100 text-slate-700 border"; } }
+    <section id="view-insights" class="card" hidden>
+      <div style="font-weight:600; margin-bottom:8px">Insights & Recomendaciones</div>
+      <ul style="margin:0 0 8px 18px; padding:0; font-size:14px">
+        <li><b>Estrellas</b>: Mantén calidad, evita cambios bruscos y promuévelas.</li>
+        <li><b>Caballos</b>: Optimiza costo (mermas/proveedores). Considera un ajuste leve de precio.</li>
+        <li><b>Puzzles</b>: Rentables pero poco vendidos; dales visibilidad, combos u ofertas.</li>
+        <li><b>Perros</b>: Replantea receta, precio o retíralos gradualmente.</li>
+      </ul>
+      <div id="stats" class="grid grid-2"></div>
+    </section>
 
-    // -------- State persistente --------
-    function usePersistentState(defaultState){
-      const [state, setState] = useState(()=>{
-        try{ const raw=localStorage.getItem(LS_KEY); return raw?JSON.parse(raw):defaultState; }catch{ return defaultState; }
-      });
-      useEffect(()=>{ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch{} }, [state]);
-      return [state, setState];
-    }
+    <section id="view-help" class="card" hidden>
+      <div style="font-weight:600; margin-bottom:8px">Cómo usar la app</div>
+      <ol style="margin:0 0 8px 18px; padding:0; font-size:14px">
+        <li>En <b>Tabla</b>, edita <i>Precio</i>, <i>Costo</i> y <i>Ventas</i>. El sistema calcula <i>Margen</i>, <i>Contribución</i> y <i>Clasificación</i>.</li>
+        <li>Elige si los umbrales usan <i>promedio</i> o <i>mediana</i>.</li>
+        <li>En <b>Matriz</b> verás cada ítem por popularidad (ventas) y margen con líneas de umbral.</li>
+        <li>Exporta/Importa CSV para respaldar o continuar en Excel/Sheets.</li>
+      </ol>
+    </section>
 
-    // -------- App --------
-    function App(){
-      const [db, setDb] = usePersistentState({
+    <footer class="container">
+      Hecho con ❤️ por Digital Drinks Consulting. Datos guardados en tu navegador (localStorage).
+    </footer>
+  </main>
+
+  <script>
+    // --------- Utilidades ---------
+    const LS_KEY = "menu_engineer_pro_vanilla_v1";
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const currency = n => isNaN(n) ? '-' : new Intl.NumberFormat(undefined,{style:'currency', currency:'USD'}).format(n);
+    const median = arr => { const a=[...arr].sort((x,y)=>x-y); const m=Math.floor(a.length/2); return a.length%2?a[m]:(a[m-1]+a[m])/2; };
+    const uid = () => Math.random().toString(36).slice(2);
+    const escapeCSV = s => { const v=String(s).replace(/"/g,'""'); return /[",\n]/.test(v)?`"${v}"`:v; };
+    function splitCSVLine(line){ const out=[]; let cur=""; let inQ=false; for(let i=0;i<line.length;i++){ const ch=line[i];
+      if(ch=='"'){ if(inQ && line[i+1]=='"'){cur+='"';i++;} else {inQ=!inQ;} }
+      else if(ch==',' && !inQ){ out.push(cur); cur=""; }
+      else { cur+=ch; } }
+      out.push(cur); return out.map(s=>s.trim()); }
+    function parseCSV(text){ const lines=text.split(/\r?\n/).filter(Boolean); if(!lines.length) return []; const headers=lines[0].split(",").map(h=>h.trim());
+      return lines.slice(1).map(line=>{ const cols=splitCSVLine(line); const obj={}; headers.forEach((h,i)=>obj[h]=cols[i]); return obj; }); }
+    function downloadText(filename, text){ const blob=new Blob([text], {type:"text/plain;charset=utf-8"}); const url=URL.createObjectURL(blob); const a=document.createElement("a"); a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url),500); }
+
+    // --------- Estado ---------
+    const state = (() => {
+      try { const raw = localStorage.getItem(LS_KEY); if(raw) return JSON.parse(raw); } catch {}
+      return {
         items: [
           { id: uid(), name: "Margarita Clásica", price: 8.5, cost: 2.2, sold: 180 },
           { id: uid(), name: "Old Fashioned", price: 10, cost: 2.5, sold: 120 },
@@ -95,215 +182,173 @@
           { id: uid(), name: "Negroni", price: 9.5, cost: 2.8, sold: 90 },
         ],
         thresholds: { popularity: "avg", margin: "avg" },
-        activeTab: "table",
+        active: "table",
+      };
+    })();
+    function save(){ try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} }
+
+    // --------- Cálculos ---------
+    function metricsCalc(){
+      const sales = state.items.map(i => +i.sold||0);
+      const margins = state.items.map(i => (+i.price||0) - (+i.cost||0));
+      const popularityAvg = sales.reduce((a,b)=>a+b,0) / (sales.length || 1);
+      const marginAvg = margins.reduce((a,b)=>a+b,0) / (margins.length || 1);
+      const popularityMedian = median(sales);
+      const marginMedian = median(margins);
+      const popularityThreshold = state.thresholds.popularity === "median" ? popularityMedian : popularityAvg;
+      const marginThreshold = state.thresholds.margin === "median" ? marginMedian : marginAvg;
+      return { popularityAvg, marginAvg, popularityMedian, marginMedian, popularityThreshold, marginThreshold };
+    }
+    function classify(item, m){
+      const sold = +item.sold||0;
+      const margin = (+item.price||0) - (+item.cost||0);
+      const popHigh = sold >= m.popularityThreshold;
+      const marHigh = margin >= m.marginThreshold;
+      if (popHigh && marHigh) return "star";
+      if (popHigh && !marHigh) return "plow";
+      if (!popHigh && marHigh) return "puzzle";
+      return "dog";
+    }
+    function labelFor(cls){ return cls==="star"?"Estrella":cls==="plow"?"Caballo":cls==="puzzle"?"Puzzle":"Perro"; }
+    function badgeClass(cls){ return cls==="star"?"chip b-star":cls==="plow"?"chip b-plow":cls==="puzzle"?"chip b-puzzle":"chip b-dog"; }
+
+    // --------- Render ---------
+    function render(){
+      // Tabs
+      $$(".tab").forEach(b=>{
+        b.classList.toggle("active", b.dataset.tab===state.active);
+        b.onclick = ()=>{ state.active=b.dataset.tab; save(); showView(); };
       });
-
-      const metrics = useMemo(()=>computeMetrics(db.items, db.thresholds), [db.items, db.thresholds]);
-
-      function handleCSVImport(file){
-        const reader = new FileReader();
-        reader.onload = ()=>{
-          try{
-            const rows = parseCSV(reader.result);
-            const items = rows.map(r=>({
-              id: uid(),
-              name: r.name || r.Nombre || r.Item || "",
-              price: Number(r.price ?? r.Precio ?? r.Price ?? 0),
-              cost: Number(r.cost ?? r.Costo ?? r.Cost ?? 0),
-              sold: Number(r.sold ?? r.Ventas ?? r.Sold ?? 0),
-            })).filter(x=>x.name);
-            if(!items.length) return alert("CSV sin columnas válidas. Encabezados: name, price, cost, sold");
-            setDb(s=>({...s, items}));
-          } catch { alert("No se pudo leer el CSV."); }
-        };
-        reader.readAsText(file);
-      }
-      function handleCSVExport(){
-        const header = "name,price,cost,sold,margin,contribution\n";
-        const lines = db.items.map(i=>{
-          const m=(i.price||0)-(i.cost||0);
-          const c=m*(i.sold||0);
-          return `${escapeCSV(i.name)},${i.price||0},${i.cost||0},${i.sold||0},${m.toFixed(2)},${c.toFixed(2)}`;
-        }).join("\n");
-        downloadText("menu-engineer-data.csv", header+lines);
-      }
-
-      return html`
-        <div class="min-h-screen">
-          <header class="sticky top-0 z-10 bg-white/80 backdrop-blur border-b border-slate-200">
-            <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-              <div class="flex items-center gap-3">
-                <div class="w-9 h-9 rounded-2xl bg-slate-900 text-white grid place-items-center font-bold">ME</div>
-                <div>
-                  <h1 class="text-xl font-semibold leading-tight">Menu Engineer Pro</h1>
-                  <p class="text-xs text-slate-500 -mt-0.5">Clasifica ítems y optimiza rentabilidad</p>
-                </div>
-              </div>
-              <div class="flex items-center gap-2">
-                <label class="px-3 py-1.5 text-sm rounded-xl bg-slate-100 hover:bg-slate-200 cursor-pointer">
-                  Importar CSV
-                  <input type="file" accept=".csv,text/csv" class="hidden"
-                         onChange=${e=>e.target.files&&e.target.files[0]&&handleCSVImport(e.target.files[0])} />
-                </label>
-                <button onClick=${handleCSVExport} class="px-3 py-1.5 text-sm rounded-xl bg-slate-100 border">Exportar CSV</button>
-              </div>
-            </div>
-            <nav class="max-w-6xl mx-auto px-2 pb-2 overflow-x-auto">
-              <div class="flex gap-2">
-                ${["table","matrix","insights","help"].map(t => html`
-                  <button class=${`px-3 py-2 rounded-xl text-sm whitespace-nowrap border ${db.activeTab===t?"bg-slate-900 text-white border-slate-900":"bg-white hover:bg-slate-100 border-slate-200"}`}
-                          onClick=${()=>setDb(s=>({...s, activeTab: t}))}>
-                    ${t==="table"?"Tabla":t==="matrix"?"Matriz":t==="insights"?"Insights":"Ayuda"}
-                  </button>
-                `)}
-              </div>
-            </nav>
-          </header>
-
-          <main class="max-w-6xl mx-auto p-4">
-            ${db.activeTab==="table" && html`<${ItemsTable} db=${db} setDb=${setDb} metrics=${metrics} />`}
-            ${db.activeTab==="matrix" && html`<${MatrixView} db=${db} metrics=${metrics} />`}
-            ${db.activeTab==="insights" && html`<${Insights} metrics=${metrics} />`}
-            ${db.activeTab==="help" && html`<${Help} />`}
-          </main>
-
-          <footer class="max-w-6xl mx-auto px-4 pb-10 text-xs text-slate-500">
-            <div class="mt-6 border-t pt-3">Hecho con ❤️ por Digital Drinks Consulting. Datos guardados en tu navegador.</div>
-          </footer>
-        </div>
-      `;
+      showView();
+    }
+    function showView(){
+      $("#view-table").hidden = state.active!=="table";
+      $("#view-matrix").hidden = state.active!=="matrix";
+      $("#view-insights").hidden = state.active!=="insights";
+      $("#view-help").hidden = state.active!=="help";
+      if (state.active==="table") renderTable();
+      if (state.active==="matrix") renderMatrix();
+      if (state.active==="insights") renderInsights();
     }
 
-    function ItemsTable({ db, setDb, metrics }){
-      function addItem(){ setDb(s=>({...s, items:[...s.items, {id:uid(), name:"Nuevo ítem", price:0, cost:0, sold:0}]})); }
-      function setItem(id, patch){ setDb(s=>({...s, items: s.items.map(i=>i.id===id?{...i, ...patch}:i)})); }
-      function removeItem(id){ setDb(s=>({...s, items: s.items.filter(i=>i.id!==id)})); }
-      function setThresholds(field, val){ setDb(s=>({...s, thresholds:{...s.thresholds, [field]: val}})); }
+    function renderTable(){
+      const m = metricsCalc();
+      $("#thr-pop").value = state.thresholds.popularity;
+      $("#thr-mar").value = state.thresholds.margin;
+      $("#thr-info").innerHTML =
+        `Popularidad umbral: <b>${m.popularityThreshold.toFixed(1)}</b> | Margen umbral: <b>${currency(m.marginThreshold)}</b>`;
+      $("#thr-pop").onchange = e => { state.thresholds.popularity = e.target.value; save(); render(); }
+      $("#thr-mar").onchange = e => { state.thresholds.margin = e.target.value; save(); render(); }
 
-      return html`
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
-          <div class="flex items-center justify-between mb-3">
-            <div><h2 class="text-lg font-semibold">Tabla de ítems</h2><p class="text-sm text-slate-500">Edita Precio, Costo y Ventas. Calcula Margen, Contribución y Clasificación.</p></div>
-            <button onClick=${addItem} class="px-3 py-1.5 text-sm rounded-lg bg-slate-900 text-white">Añadir ítem</button>
-          </div>
-          <div class="flex flex-wrap items-center gap-3 mb-3 text-sm">
-            <div class="flex items-center gap-2"><span class="text-slate-500">Umbral popularidad:</span>
-              <select value=${db.thresholds.popularity} onChange=${e=>setThresholds("popularity", e.target.value)} class="border rounded px-2 py-1">
-                <option value="avg">Promedio</option><option value="median">Mediana</option>
-              </select>
-            </div>
-            <div class="flex items-center gap-2"><span class="text-slate-500">Umbral margen:</span>
-              <select value=${db.thresholds.margin} onChange=${e=>setThresholds("margin", e.target.value)} class="border rounded px-2 py-1">
-                <option value="avg">Promedio</option><option value="median">Mediana</option>
-              </select>
-            </div>
-            <div class="text-slate-500">Popularidad umbral: <strong>${metrics.popularityThreshold.toFixed(1)}</strong> | Margen umbral: <strong>${currency(metrics.marginThreshold)}</strong></div>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead><tr class="text-left text-slate-500"><th class="py-1">Ítem</th><th class="py-1">Precio</th><th class="py-1">Costo</th><th class="py-1">Ventas</th><th class="py-1">Margen</th><th class="py-1">Contribución</th><th class="py-1">Clasificación</th><th class="py-1 w-24">Acciones</th></tr></thead>
-              <tbody>
-                ${db.items.map(i=>{
-                  const margin=(Number(i.price)||0)-(Number(i.cost)||0);
-                  const contrib=margin*(Number(i.sold)||0);
-                  const cls=classify(i, metrics);
-                  return html`<tr class="border-t">
-                    <td class="py-1 pr-2"><input value=${i.name} onInput=${e=>setItem(i.id,{name:e.target.value})} class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1"/></td>
-                    <td class="py-1 pr-2 w-28"><input type="number" step="0.01" value=${i.price} onInput=${e=>setItem(i.id,{price:Number(e.target.value)})} class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1"/></td>
-                    <td class="py-1 pr-2 w-28"><input type="number" step="0.01" value=${i.cost} onInput=${e=>setItem(i.id,{cost:Number(e.target.value)})} class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1"/></td>
-                    <td class="py-1 pr-2 w-24"><input type="number" value=${i.sold} onInput=${e=>setItem(i.id,{sold:Number(e.target.value)})} class="w-full bg-slate-50 border border-slate-200 rounded px-2 py-1"/></td>
-                    <td class="py-1 pr-2">${currency(margin)}</td>
-                    <td class="py-1 pr-2">${currency(contrib)}</td>
-                    <td class="py-1 pr-2"><span class=${`px-2 py-0.5 rounded text-xs ${badgeClass(cls)}`}>${labelFor(cls)}</span></td>
-                    <td class="py-1 w-24"><button onClick=${()=>removeItem(i.id)} class="text-rose-600 hover:underline">Eliminar</button></td>
-                  </tr>`;
-                })}
-              </tbody>
-            </table>
-          </div>
-        </section>
-      `;
+      const tbody = $("#tbl tbody");
+      tbody.innerHTML = "";
+      state.items.forEach((i, idx) => {
+        const margin = (+i.price||0) - (+i.cost||0);
+        const contrib = margin * (+i.sold||0);
+        const cls = classify(i, m);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><input value="${i.name}" /></td>
+          <td><input type="number" step="0.01" value="${i.price}"/></td>
+          <td><input type="number" step="0.01" value="${i.cost}"/></td>
+          <td><input type="number" value="${i.sold}"/></td>
+          <td>${currency(margin)}</td>
+          <td>${currency(contrib)}</td>
+          <td><span class="${badgeClass(cls)}">${labelFor(cls)}</span></td>
+          <td><button class="btn secondary btn-del" style="padding:4px 8px">Eliminar</button></td>
+        `;
+        const [inpName, inpPrice, inpCost, inpSold] = tr.querySelectorAll("input");
+        inpName.oninput = e => { i.name = e.target.value; save(); renderTable(); }
+        inpPrice.oninput = e => { i.price = +e.target.value; save(); renderTable(); }
+        inpCost.oninput = e => { i.cost = +e.target.value; save(); renderTable(); }
+        inpSold.oninput = e => { i.sold = +e.target.value; save(); renderTable(); }
+        tr.querySelector(".btn-del").onclick = ()=>{ state.items.splice(idx,1); save(); renderTable(); };
+        tbody.appendChild(tr);
+      });
+
+      $("#addItem").onclick = ()=>{ state.items.push({ id:uid(), name:"Nuevo ítem", price:0, cost:0, sold:0 }); save(); renderTable(); };
     }
 
-    function MatrixView({ db, metrics }){
-      const points = db.items.map(i=>{
-        const margin=(Number(i.price)||0)-(Number(i.cost)||0);
-        const x=margin, y=Number(i.sold)||0, cls=classify(i, metrics);
-        return { id:i.id, name:i.name, x, y, cls };
+    function renderMatrix(){
+      const m = metricsCalc();
+      const box = $("#matrix");
+      box.innerHTML = "";
+      const points = state.items.map(i=>{
+        const margin = (+i.price||0) - (+i.cost||0);
+        const x=margin, y=(+i.sold||0), cls=classify(i,m);
+        return {name:i.name, x, y, cls};
       });
-      const xs = points.map(p=>p.x), ys = points.map(p=>p.y);
+      const xs = points.map(p=>p.x), ys=points.map(p=>p.y);
       const minX = Math.min(...xs, 0), maxX = Math.max(...xs, 1);
       const minY = Math.min(...ys, 0), maxY = Math.max(...ys, 1);
-      const scale = (v, mi, ma)=> ma===mi?50:((v-mi)/(ma-mi))*100;
+      const sc = (v, mi, ma) => ma===mi ? 50 : ((v-mi)/(ma-mi))*100;
 
-      return html`
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
-          <div class="mb-3"><h2 class="text-lg font-semibold">Matriz de Menu Engineering</h2><p class="text-sm text-slate-500">Ejes: Popularidad (Ventas) y Margen por ítem</p></div>
-          <div class="relative border rounded-xl bg-slate-50" style="height:420px">
-            <div class="absolute inset-0">
-              <div class="absolute left-0 right-0 border-t border-dashed border-slate-300" style=${`top:${100 - scale(metrics.popularityThreshold, minY, maxY)}%`}></div>
-              <div class="absolute top-0 bottom-0 border-l border-dashed border-slate-300" style=${`left:${scale(metrics.marginThreshold, minX, maxX)}%`}></div>
-            </div>
-            <div class="absolute top-2 left-2 text-xs bg-white/80 rounded px-1.5 py-0.5">↑ Popularidad</div>
-            <div class="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs bg-white/80 rounded px-1.5 py-0.5">Margen →</div>
-            ${points.map(p=> html`<div class=${`absolute px-2 py-1 rounded text-xs shadow ${badgeClass(p.cls)}`}
-                 style=${`left:calc(${scale(p.x, minX, maxX)}% - 24px); top:calc(${100 - scale(p.y, minY, maxY)}% - 12px)`}
-                 title=${`${p.name} — Ventas: ${p.y}, Margen: ${currency(p.x)}`}>
-              ${p.name}
-            </div>`)}
-          </div>
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3 text-xs">
-            ${html`<${Legend} badge="star" text="Estrella (↑ popularidad, ↑ margen)" />`}
-            ${html`<${Legend} badge="plow" text="Caballo (↑ popularidad, ↓ margen)" />`}
-            ${html`<${Legend} badge="puzzle" text="Puzzle (↓ popularidad, ↑ margen)" />`}
-            ${html`<${Legend} badge="dog" text="Perro (↓ popularidad, ↓ margen)" />`}
-          </div>
-        </section>
+      // threshold lines
+      const h = document.createElement("div"); h.className="line-h"; h.style.top = `${100 - sc(m.popularityThreshold, minY, maxY)}%`; box.appendChild(h);
+      const v = document.createElement("div"); v.className="line-v"; v.style.left = `${sc(m.marginThreshold, minX, maxX)}%`; box.appendChild(v);
+
+      // axis labels
+      const t1 = document.createElement("div"); t1.className="tag"; t1.style.top="6px"; t1.style.left="6px"; t1.textContent="↑ Popularidad"; box.appendChild(t1);
+      const t2 = document.createElement("div"); t2.className="tag"; t2.style.bottom="6px"; t2.style.left="50%"; t2.style.transform="translateX(-50%)"; t2.textContent="Margen →"; box.appendChild(t2);
+
+      points.forEach(p=>{
+        const el = document.createElement("div");
+        const cls = p.cls==="star"?"b-star":p.cls==="plow"?"b-plow":p.cls==="puzzle"?"b-puzzle":"b-dog";
+        el.className = `tag ${cls}`;
+        el.style.left = `calc(${sc(p.x, minX, maxX)}% - 24px)`;
+        el.style.top  = `calc(${100 - sc(p.y, minY, maxY)}% - 12px)`;
+        el.title = `${p.name} — Ventas: ${p.y}, Margen: ${currency(p.x)}`;
+        el.textContent = p.name;
+        box.appendChild(el);
+      });
+    }
+
+    function renderInsights(){
+      const m = metricsCalc();
+      $("#stats").innerHTML = `
+        <div><div class="chip">Promedio popularidad: <b>${m.popularityAvg.toFixed(1)}</b></div></div>
+        <div><div class="chip">Mediana popularidad: <b>${m.popularityMedian.toFixed(1)}</b></div></div>
+        <div><div class="chip">Margen promedio: <b>${currency(m.marginAvg)}</b></div></div>
+        <div><div class="chip">Margen mediano: <b>${currency(m.marginMedian)}</b></div></div>
       `;
     }
 
-    function Insights({ metrics }){
-      return html`
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
-          <h2 class="text-lg font-semibold mb-2">Insights & Recomendaciones</h2>
-          <ul class="list-disc pl-5 space-y-1 text-sm">
-            <li><strong>Estrellas</strong>: Mantén calidad y promoción discreta.</li>
-            <li><strong>Caballos</strong>: Optimiza costo (mermas/proveedores) o ajusta precio leve.</li>
-            <li><strong>Puzzles</strong>: Rentables pero poco vendidos; trabaja visibilidad, combos u ofertas.</li>
-            <li><strong>Perros</strong>: Replantea receta, precio o retíralos gradualmente.</li>
-          </ul>
-          <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-            ${html`<${Stat} label="Promedio de popularidad (ventas)" value=${metrics.popularityAvg.toFixed(1)} />`}
-            ${html`<${Stat} label="Mediana de popularidad" value=${metrics.popularityMedian.toFixed(1)} />`}
-            ${html`<${Stat} label="Margen promedio por ítem" value=${currency(metrics.marginAvg)} />`}
-            ${html`<${Stat} label="Margen mediano por ítem" value=${currency(metrics.marginMedian)} />`}
-          </div>
-        </section>
-      `;
-    }
+    // --------- Import/Export ---------
+    $("#fileCSV").onchange = e=>{
+      const f = e.target.files && e.target.files[0]; if(!f) return;
+      const r = new FileReader(); r.onload = ()=>{
+        try{
+          const rows = parseCSV(r.result);
+          const items = rows.map(o=>({
+            id: uid(),
+            name: o.name || o.Nombre || o.Item || "",
+            price: Number(o.price ?? o.Precio ?? o.Price ?? 0),
+            cost: Number(o.cost ?? o.Costo ?? o.Cost ?? 0),
+            sold: Number(o.sold ?? o.Ventas ?? o.Sold ?? 0),
+          })).filter(x=>x.name);
+          if(!items.length) return alert("CSV sin columnas válidas. Usa encabezados: name, price, cost, sold");
+          state.items = items; save(); render();
+        }catch{ alert("No se pudo leer el CSV."); }
+      }; r.readAsText(f);
+      e.target.value = "";
+    };
+    $("#btnCSV").onclick = ()=>{
+      const header = "name,price,cost,sold,margin,contribution\n";
+      const lines = state.items.map(i=>{
+        const m = (+i.price||0) - (+i.cost||0);
+        const c = m * (+i.sold||0);
+        return `${escapeCSV(i.name)},${i.price||0},${i.cost||0},${i.sold||0},${m.toFixed(2)},${c.toFixed(2)}`;
+      }).join("\n");
+      downloadText("menu-engineer-data.csv", header+lines);
+    };
+    $("#btnJSON").onclick = ()=>{
+      downloadText(`menu-engineer-${new Date().toISOString().slice(0,10)}.json`, JSON.stringify(state, null, 2));
+    };
 
-    function Help(){
-      return html`
-        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-4 mb-4">
-          <h2 class="text-lg font-semibold mb-2">Cómo usar la app</h2>
-          <ol class="list-decimal pl-5 space-y-2 text-sm">
-            <li>En <strong>Tabla</strong>, edita <em>Precio</em>, <em>Costo</em> y <em>Ventas</em>. Se calcula <em>Margen</em>, <em>Contribución</em> y <em>Clasificación</em>.</li>
-            <li>Elige si los umbrales usan <em>promedio</em> o <em>mediana</em>.</li>
-            <li>La <strong>Matriz</strong> posiciona ítems por popularidad y margen con líneas de umbral.</li>
-            <li>Exporta/Importa CSV para trabajar con Excel o Google Sheets.</li>
-          </ol>
-        </section>
-      `;
-    }
-
-    function Stat({ label, value }){
-      return html`<div class="border rounded-lg p-3 bg-slate-50"><div class="text-xs text-slate-500">${label}</div><div class="text-lg font-semibold">${value}</div></div>`;
-    }
-    function Legend({ badge, text }){
-      return html`<div class="flex items-center gap-2"><span class=${`px-2 py-0.5 rounded text-xs ${badgeClass(badge)}`}>${labelFor(badge)}</span><span class="text-slate-500">${text}</span></div>`;
-    }
-
-    // -------- Montaje --------
-    render(html`<${App} />`, root);
-  })();
-</script>
+    // --------- Init ---------
+    // activar tab por defecto
+    document.querySelector(`.tab[data-tab="${state.active}"]`)?.classList.add("active");
+    render();
+  </script>
+</body>
+</html>
